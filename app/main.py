@@ -10,7 +10,6 @@ from app.services.edamam import EdamamService
 classifier: FoodClassifier = None
 edamam: EdamamService = None
 
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global classifier, edamam
