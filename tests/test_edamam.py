@@ -70,6 +70,7 @@ class TestEdamamSearchFood:
             if e.response.status_code == 401:
                 pytest.skip("Edamam API 키가 유효하지 않음 (401) — Food Database API 키인지 확인 필요")
             raise
+
         assert result is not None
         for key in ("food_id", "label", "calories_per_100g", "protein_per_100g", "fat_per_100g", "carbs_per_100g"):
             assert key in result

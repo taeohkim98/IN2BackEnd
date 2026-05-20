@@ -7,8 +7,8 @@ load_dotenv()
 class Settings:
     app_name: str = os.getenv("APP_NAME", "IN2 Food Recognition API")
     debug: bool = os.getenv("DEBUG", "false").lower() == "true"
-    model_path: str = os.getenv("MODEL_PATH", "models/mobilenet_v2_1.0_224.tflite")
-    labels_path: str = os.getenv("LABELS_PATH", "models/labels.txt")
+    model_path: str = os.getenv("MODEL_PATH", "")
+    labels_path: str = os.getenv("LABELS_PATH", "")
     top_k: int = int(os.getenv("TOP_K", "5"))
     input_size: int = int(os.getenv("INPUT_SIZE", "224"))
     edamam_app_id: str = os.getenv("EDAMAM_APP_ID", "")

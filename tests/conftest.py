@@ -8,9 +8,12 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+from dotenv import load_dotenv
 from PIL import Image
 
-TEST_IMAGES_DIR = Path(__file__).parent.parent / "test_images"
+load_dotenv(Path(__file__).parent.parent / ".env", override=True)
+
+TEST_IMAGES_DIR = Path(__file__).parent.parent / "images"
 
 
 def _make_dummy_image(width: int = 224, height: int = 224) -> bytes:

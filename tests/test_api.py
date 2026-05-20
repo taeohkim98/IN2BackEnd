@@ -69,12 +69,12 @@ class TestAnalyzeEndpoint:
         from pathlib import Path
 
         images = sorted(
-            list(Path("test_images").glob("*.jpg"))
-            + list(Path("test_images").glob("*.jpeg"))
-            + list(Path("test_images").glob("*.png"))
+            list(Path("images").glob("*.jpg"))
+            + list(Path("images").glob("*.jpeg"))
+            + list(Path("images").glob("*.png"))
         )
         if not images:
-            pytest.skip("test_images/ 폴더에 이미지 없음")
+            pytest.skip("images/ 폴더에 이미지 없음")
 
         for img_path in images:
             data = img_path.read_bytes()

@@ -33,13 +33,11 @@ class FoodClassifier:
     # ------------------------------------------------------------------
 
     def _load_tflite(self, model_path: str) -> None:
-        try:
-            import tensorflow as tf
-            self.interpreter = tf.lite.Interpreter(model_path=str(model_path))
-        except ImportError:
-            import tflite_runtime.interpreter as tflite
-            self.interpreter = tflite.Interpreter(model_path=str(model_path))
+        from ai_edge_litert.interpreter import Interpreter
+        self.interpreter = Interpreter(model_path=str(model_path))
         self.interpreter.allocate_tensors()
+        self.input_size = self.interpreter.get_input_details()[0]["shape"][1]
+
 
     def _load_keras_mobilenetv2(self) -> None:
         import tensorflow as tf
