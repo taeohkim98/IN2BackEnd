@@ -22,8 +22,11 @@ async def lifespan(app: FastAPI):
     edamam = EdamamService(app_id=settings.edamam_app_id, app_key=settings.edamam_app_key)
     yield
 
-
 app = FastAPI(title=settings.app_name, lifespan=lifespan)
+
+@app.get("/")
+def root():
+    return {"message": "Welcome to the Food Classifier API."}
 
 app.add_middleware(
     CORSMiddleware,
