@@ -48,35 +48,86 @@ async def health():
 @app.post("/analyze")
 async def analyze_food(file: UploadFile = File(...)):
     """
-    이미지 파일을 받아 음식 분류 + 칼로리 정보를 반환.
-
-    - **file**: JPEG / PNG 이미지
-    - 반환: 예측 목록, 최상위 음식명, 신뢰도, 영양 정보(Edamam)
+    Flutter 앱에서 음식 이미지를 분석하고 영양 정보를 반환.
+    
+    - **file**: JPEG / PNG 이미지 파일
+    - 반환: 예측 목록, 최상위 음식명, 신뢰도, 영양 정보
     """
+    # ===== 원래 코드 (참고용) =====
+    # if not file.content_type or not file.content_type.startswith("image/"):
+    #     raise HTTPException(status_code=400, detail="image/* 형식의 파일만 허용됩니다.")
+    #
+    # image_data = await file.read()
+    # if not image_data:
+    #     raise HTTPException(status_code=400, detail="빈 파일입니다.")
+    #
+    # predictions = classifier.classify(image_data)
+    # if not predictions:
+    #     raise HTTPException(status_code=422, detail="이미지를 분류할 수 없습니다.")
+    #
+    # top = predictions[0]
+    # food_name = top["label"]
+    #
+    # nutrition = None
+    # if edamam.is_configured:
+    #     try:
+    #         nutrition = await edamam.search_food(food_name)
+    #     except Exception:
+    #         pass  # Edamam 실패는 치명적이지 않음
+    #
+    # return {
+    #     "top_food": food_name,
+    #     "confidence": top["confidence"],
+    #     "predictions": predictions,
+    #     "nutrition": nutrition,
+    # }
+    # ===== Flutter 통신 버전 =====
+    
+    # 파일 형식 검증
     if not file.content_type or not file.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="image/* 형식의 파일만 허용됩니다.")
+        raise HTTPException(
+            status_code=400,
+            detail="image/* 형식의 파일만 허용됩니다."
+        )
 
+    # 이미지 데이터 읽기
     image_data = await file.read()
     if not image_data:
         raise HTTPException(status_code=400, detail="빈 파일입니다.")
 
+    # 음식 분류
     predictions = classifier.classify(image_data)
     if not predictions:
         raise HTTPException(status_code=422, detail="이미지를 분류할 수 없습니다.")
 
     top = predictions[0]
     food_name = top["label"]
+    confidence = top["confidence"]
 
+    # 영양 정보 조회
     nutrition = None
     if edamam.is_configured:
         try:
             nutrition = await edamam.search_food(food_name)
-        except Exception:
-            pass  # Edamam 실패는 치명적이지 않음
+        except Exception as e:
+            # Edamam 실패는 치명적이지 않음
+            nutrition = None
 
+    # Flutter 앱용 응답 포맷
     return {
-        "top_food": food_name,
-        "confidence": top["confidence"],
-        "predictions": predictions,
-        "nutrition": nutrition,
+        "success": True,
+        "data": {
+            "top_food": food_name,
+            "confidence": round(float(confidence), 4),
+            "predictions": [
+                {
+                    "label": p["label"],
+                    "confidence": round(float(p["confidence"]), 4)
+                }
+                for p in predictions
+            ],
+            "nutrition": nutrition,
+            "model_type": "tflite" if classifier.interpreter else "keras-mobilenetv2",
+        },
+        "timestamp": None,  # 필요시 추가: datetime.utcnow().isoformat()
     }
