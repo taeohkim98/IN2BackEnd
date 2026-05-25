@@ -100,6 +100,8 @@ class TestEdamamSearchFood:
         }
 
         class MockResponse:
+            status_code = 200  # 정상 응답
+            
             def raise_for_status(self):
                 pass
 

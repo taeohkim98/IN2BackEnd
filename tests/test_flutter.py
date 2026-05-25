@@ -4,7 +4,7 @@ Flutter 앱이 전송하는 요청 형식과 응답 스키마를 검증합니다
 TensorFlow 없이도 실행되도록 classifier와 edamam을 mock합니다.
 """
 import io
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, AsyncMock
 
 import numpy as np
 import pytest
@@ -44,13 +44,15 @@ MOCK_NUTRITION = {
 
 @pytest.fixture(scope="module")
 def client():
+    """Mock된 Classifier와 Edamam으로 테스트 클라이언트 생성."""
     mock_classifier = MagicMock()
     mock_classifier.classify.return_value = MOCK_PREDICTIONS
     mock_classifier.interpreter = None
 
     mock_edamam = MagicMock()
     mock_edamam.is_configured = True
-    mock_edamam.search_food = MagicMock(return_value=MOCK_NUTRITION)
+    # search_food는 async이므로 AsyncMock 사용
+    mock_edamam.search_food = AsyncMock(return_value=MOCK_NUTRITION)
 
     with patch("app.main.FoodClassifier", return_value=mock_classifier), \
          patch("app.main.EdamamService", return_value=mock_edamam):
@@ -125,12 +127,15 @@ class TestAnalyzeWithFlutterImages:
         )
         assert r.status_code == 200
         body = r.json()
+        assert body["success"] is True
+        
+        data = body.get("data")
+        assert data is not None
+        assert isinstance(data.get("top_food"), str)
+        assert isinstance(data.get("confidence"), float)
+        assert 0.0 <= data["confidence"] <= 1.0
 
-        assert isinstance(body.get("top_food"), str)
-        assert isinstance(body.get("confidence"), float)
-        assert 0.0 <= body["confidence"] <= 1.0
-
-        predictions = body.get("predictions")
+        predictions = data.get("predictions")
         assert isinstance(predictions, list)
         assert len(predictions) > 0
         for pred in predictions:
@@ -138,7 +143,7 @@ class TestAnalyzeWithFlutterImages:
             assert isinstance(pred.get("confidence"), float)
             assert 0.0 <= pred["confidence"] <= 1.0
 
-        assert body.get("nutrition") is None or isinstance(body.get("nutrition"), dict)
+        assert data.get("nutrition") is None or isinstance(data.get("nutrition"), dict)
 
     def test_analyze_top_food_matches_highest_confidence(self, client):
         """top_food가 predictions 중 confidence가 가장 높은 항목인지 확인."""
@@ -147,8 +152,9 @@ class TestAnalyzeWithFlutterImages:
             files={"file": ("photo.jpg", _make_jpeg_bytes(224, 224), "image/jpeg")},
         )
         body = r.json()
-        assert body["top_food"] == body["predictions"][0]["label"]
-        assert body["confidence"] == body["predictions"][0]["confidence"]
+        data = body["data"]
+        assert data["top_food"] == data["predictions"][0]["label"]
+        assert data["confidence"] == data["predictions"][0]["confidence"]
 
     def test_analyze_nutrition_schema_when_present(self, client):
         """nutrition 필드가 있을 때 Flutter가 파싱할 수 있는 구조인지 확인."""
@@ -157,7 +163,8 @@ class TestAnalyzeWithFlutterImages:
             files={"file": ("photo.jpg", _make_jpeg_bytes(224, 224), "image/jpeg")},
         )
         body = r.json()
-        nutrition = body.get("nutrition")
+        data = body.get("data", {})
+        nutrition = data.get("nutrition")
         if nutrition is not None:
             assert isinstance(nutrition, dict)
 

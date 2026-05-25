@@ -119,7 +119,9 @@ async def analyze_food(file: UploadFile = File(...)):
         try:
             nutrition = await edamam.search_food(food_name)
         except Exception as e:
-            # Edamam 실패는 치명적이지 않음
+            # Edamam API 실패 시 fallback (429 Rate Limit, 503 Service Unavailable 등)
+            import logging
+            logging.warning(f"Edamam API 호출 실패: {str(e)} - nutrition 정보 없이 응답 진행")
             nutrition = None
 
     # Flutter 앱용 응답 포맷
