@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
-import imghdr
 from pathlib import Path
+from PIL import Image
+import io
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -100,8 +101,10 @@ async def analyze_food(file: UploadFile = File(...)):
     if not image_data:
         raise HTTPException(status_code=400, detail="빈 파일입니다.")
     
-    # 3단계: Magic bytes 검증 (실제 이미지 파일 확인)
-    if not imghdr.what(None, h=image_data):
+    # 3단계: Magic bytes 검증 (실제 이미지 파일 확인) - PIL 사용
+    try:
+        Image.open(io.BytesIO(image_data))
+    except (IOError, OSError):
         raise HTTPException(status_code=400, detail="유효하지 않은 이미지 파일입니다.")
 
     # 음식 분류
