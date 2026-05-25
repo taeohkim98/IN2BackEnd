@@ -1,4 +1,6 @@
 from contextlib import asynccontextmanager
+import imghdr
+from pathlib import Path
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -83,17 +85,24 @@ async def analyze_food(file: UploadFile = File(...)):
     # }
     # ===== Flutter 통신 버전 =====
     
-    # 파일 형식 검증
-    if not file.content_type or not file.content_type.startswith("image/"):
+    # 1단계: 파일명 기반 확장자 검증
+    valid_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'}
+    file_ext = Path(file.filename).suffix.lower()
+    
+    if file_ext not in valid_extensions:
         raise HTTPException(
             status_code=400,
-            detail="image/* 형식의 파일만 허용됩니다."
+            detail=f"지원하지 않는 파일 형식입니다. ({file_ext}) 허용: {', '.join(valid_extensions)}"
         )
 
-    # 이미지 데이터 읽기
+    # 2단계: 이미지 데이터 읽기
     image_data = await file.read()
     if not image_data:
         raise HTTPException(status_code=400, detail="빈 파일입니다.")
+    
+    # 3단계: Magic bytes 검증 (실제 이미지 파일 확인)
+    if not imghdr.what(None, h=image_data):
+        raise HTTPException(status_code=400, detail="유효하지 않은 이미지 파일입니다.")
 
     # 음식 분류
     predictions = classifier.classify(image_data)
