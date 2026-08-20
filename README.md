@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Food Calorie Recognition API
 
 A FastAPI backend that accepts food images from a Flutter app, classifies them using a TFLite (or Keras MobileNetV2) model, and returns nutrition data from the Edamam Food Database API.
@@ -145,9 +144,7 @@ tests/
   test_edamam.py
   test_flutter.py
 ```
-=======
 # IN2 Food Recognition API
->>>>>>> IN2-7-1
 
 A FastAPI backend that accepts food images from a Flutter app, classifies them using a TFLite (or Keras MobileNetV2) model, and returns nutrition data from the Edamam Food Database API.
 
